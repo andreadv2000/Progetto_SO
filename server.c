@@ -7,6 +7,10 @@
 #include <stdio.h>
 #include <uart.h>
 
+
+
+
+
 //******************Setting Output Pins******************//
 
 /*
@@ -41,6 +45,13 @@
 volatile int interrupt_occurred = 0;
 volatile int interrupt_counter = 0;
 //********************************************************/
+
+int ret, idx;
+float sampling_time;
+
+char sent_message[2024];
+float ADC_values[3] = {0.0,0.0,0.0};
+
 
 //******************Interrupt Service Routine******************//
 ISR(TIMER5_COMPA_vect){
@@ -92,7 +103,7 @@ void ADC_init(){
      * A1 set as analog input
      * REF value is 5v
     */
-    ADMUX |= (1 << MUX0) | (1 << REFS0);
+    //ADMUX |= (1 << MUX0) | (1 << REFS0);
     
     /*
      * ADCSRA Register Description:
@@ -123,13 +134,44 @@ void ADC_init(){
     */
    ADCSRA |= (1 << ADEN) | (1 << ADPS0) | (1 << ADPS1);
 }
+
 void oscilloscope(){
 
+  /* Variables declaration */
+  char adc_value_str[20];
+  
+  /* Calcolate ADC values */
+  for (idx = 0; idx < 3; idx++){
+   /* Set ADC channel */
+    ADMUX |= (i == 0) ? (1 << MUX0) | (1 << REFS0) :
+             (i == 1) ? (1 << MUX0) | (1 << MUX1) | (1<< REFS0) :
+             (i == 2) ? (1 << MUX0) | (1 << MUX2) | (1<< REFS0);
 
+    /* Start ADC conversion */
+    ADCSRA |= (1 << ADSC);
+
+    /* Wait for ADC conversion to complete */
+    while(ADCSRA & (1 << ADSC));
+    ADC_values[idx] = ADC * Volt_converter;
+    ADMUX = 0;
+  }
+   
+   sprintf(adc_value_str, "%.4f",interrupt_counter * sampling_time/1000);
+   strcat(sent_message, adc_value_str);
+   strcat(sent_message, "-");
+
+   for (int i = 0; i < 3; i++) {
+        sprintf(adc_value_str, "%.4f", ADC_values[0]);
+        strcat(sent_message, adc_value_str);
+        strcat(sent_message, i == 2 ? "\n" : " ");
+   }
+
+   UART_putString(sent_message);
 }
+
 int main(){
+
     /* Variables declaration */
-    float sampling_time;
     char user_input[1024];
 
     /* Inizialize UART */
@@ -140,6 +182,7 @@ int main(){
     
     /* Get user input and convert it to float */
     UART_getString(user_input);
+
     sampling_time = atof(user_input);
     const int timer = sampling_time;
 
@@ -155,7 +198,7 @@ int main(){
      * 1. Convert the desired interval to seconds: 1 ms = 0.001 s
      * 2. Calculate the number of clock cycles in this interval: 0.001 s * 16,000,000 Hz = 16,000 cycles
      * 3. The `OCR5A` register is 16 bits, so it can hold values up to 65,535. 
-     *    If you're using the timer in CTC mode (Clear Timer on Compare match), 
+     *    The timer is in CTC mode (Clear Timer on Compare match), 
      *    the timer will reset to 0 every time it reaches the value in `OCR5A`. 
      *    So, to get a timer interval of 16,000 cycles, you would set `OCR5A` to 16,000.
      * 4. However, if you're using a prescaler (which is common in many microcontroller applications to divide the clock frequency 

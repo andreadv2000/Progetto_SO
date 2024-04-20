@@ -65,7 +65,7 @@ int main(){
    
    printf("Enter sampling time in ms:");
    scanf("%f", &user_input);
-
+   
    /* Convert float to string for transmission to the serial port */
    gcvt(user_input, 3, msg);
    strcat(msg, "\n");

@@ -1,4 +1,11 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
 #include <termios.h>
+#include <gd.h>
+
+#define VALUES 600
 
 int main(){
 
@@ -65,7 +72,7 @@ int main(){
    
    printf("Enter sampling time in ms:");
    scanf("%f", &user_input);
-   
+
    /* Convert float to string for transmission to the serial port */
    gcvt(user_input, 3, msg);
    strcat(msg, "\n");
@@ -73,9 +80,114 @@ int main(){
    
    /* Write to the serial port */
    msg_len = strlen(msg);
-   msg_len = write(uart_fd, msg, msg_len);
+   ret = write(uart_fd, msg, msg_len);
 
-   printf("Sent %d bytes to serial port\n", msg_len);
+   printf("Sent %d bytes to serial port\n", ret);
+   
+   sleep(10);
+   
+   
+   FILE* data_stream, channel1, channel2, channel3;
+   FILE *wave1 = fopen("wave1.png", "w");
+   FILE *wave2 = fopen("wave2.png", "w");
+   FILE *wave3 = fopen("wave3.png", "w");
+   char tokens[4][20];
+   char* token;
+   int i = 0;
+   float channel1_values[VALUES];
+   float channel2_values[VALUES];
+   float channel3_values[VALUES];
 
-   /* Operazione server */
+   /* Create images for each channel */ 
+    gdImagePtr img1 = gdImageCreate(800, 600);
+    gdImagePtr img2 = gdImageCreate(800, 600);
+    gdImagePtr img3 = gdImageCreate(800, 600);
+
+    /* Allocate some colors */
+    int white = gdImageColorAllocate(img1, 255, 255, 255);
+    int black = gdImageColorAllocate(img1, 0, 0, 0);
+    gdImageColorAllocate(img2, 255, 255, 255);
+    gdImageColorAllocate(img2, 0, 0, 0);
+    gdImageColorAllocate(img3, 255, 255, 255);
+    gdImageColorAllocate(img3, 0, 0, 0);
+
+   /* Open files */
+   data_stream = fopen("data.txt", "w+");
+   if(data_stream == NULL){
+       printf("Error opening file data.txt\n");
+       return 0;
+   }
+
+   channel1 = fopen("channel1.txt", "w");
+   if(channel1 == NULL){
+      printf ("Error opening file channel1.txt\n");
+      return 0;
+   }
+
+   channel2 = fopen("channel2.txt", "w");
+   if(channel2 == NULL){
+      printf ("Error opening file channel2.txt\n");
+      return 0;
+   }
+
+   channel3 = fopen("channel3.txt", "w");
+   if(channel3 == NULL){
+      printf ("Error opening file channel3.txt\n");
+      return 0;
+   }
+   
+   while(1){
+     ret = read(uart_fd, msg, 1024);
+     if(ret < 0){
+        printf("Error reading from serial port\n");
+        break;
+     }
+     
+     printf("Recived %d bytes from seril port\n", ret);
+
+     /* Get the first token */
+     token = strtok(msg, "-");
+
+     /* Walk through other tokens */
+     while(token != NULL && i < 4) {
+        strncpy(tokens[i], token, 20);
+        token = strtok(NULL, "-");
+        i++;
+     }
+     if(tokens[0] == NULL || tokens[1] == NULL || tokens[2] == NULL || tokens[3] == NULL){
+         printf("Error reading from serial port\n");
+         return 0;
+     } 
+     fprintf(data_steam, "%s %s %s %s\n", tokens[0], tokens[1], tokens[2], tokens[3]);
+     fprintf(channel1, "%s %s\n", tokens[0], tokens[1]);
+     fprintf(channel2, "%s %s\n", tokens[0], tokens[2]);
+     fprintf(channel3, "%s %s\n", tokens[0], tokens[3]);
+
+     channel1_values[i] = atof(tokens[1]);
+     channel2_values[i] = atof(tokens[2]);
+     channel3_values[i] = atof(tokens[3]);
+     i++;
+
+   }
+
+   /* Draw the images */
+   for(i = 1; i < VALUES; i++) {
+        gdImageLine(img1, (i - 1) * 800 / VALUES, 600 - channel1_values[i - 1] * 600, i * 800 / VALUES, 600 - channel1_values[i] * 600, black);
+        gdImageLine(img2, (i - 1) * 800 / VALUES, 600 - channel2_values[i - 1] * 600, i * 800 / VALUES, 600 - channel2_values[i] * 600, black);
+        gdImageLine(img3, (i - 1) * 800 / VALUES, 600 - channel3_values[i - 1] * 600, i * 800 / VALUES, 600 - channel3_values[i] * 600, black);
+    }
+
+   if(wave1 != NULL && wave2 != NULL && wave3 != NULL) {
+        gdImagePng(img1, wave1);
+        gdImagePng(img2, wave2);
+        gdImagePng(img3, wave3);
+        fclose(wave1);
+        fclose(wave2);
+        fclose(wave3);
+    }
+   
+   fclose(data_stream);
+   fclose(channel1);
+   fclose(channel2);
+   fclose(channel3);
 }

@@ -6,6 +6,7 @@
 #include <gd.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <unistd.h>
 
 #define VALUES 600
 
@@ -35,7 +36,7 @@ int main(){
     */
     uart_fd = open("/dev/ttyACM0", O_RDWR | O_NOCTTY | O_NDELAY);
     if(uart_fd < 0){
-        printf("Error opening UART device\n");
+        perror("Error opening UART device");
         return -1;
     }
     

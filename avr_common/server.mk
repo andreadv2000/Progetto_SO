@@ -1,9 +1,12 @@
 # set this to false to disable sonars in firmware
 CC=avr-gcc
 AS=avr-gcc
-INCLUDE_DIRS=-I. -I../avr_common
+CHEX=avr-objcopy
+INCLUDE_DIRS=-I. -I./avr_common
 CC_OPTS=-Wall --std=gnu99 -DF_CPU=16000000UL -O3 -funsigned-char -funsigned-bitfields  -fshort-enums -Wall -Wstrict-prototypes -mmcu=atmega2560 $(INCLUDE_DIRS)  -D__AVR_3_BYTE_PC__
 AS_OPTS=-x assembler-with-cpp $(CC_OPTS)
+CHEX_OPTS= -O ihex -R .eeprom
+
 
 AVRDUDE=avrdude
 
@@ -23,6 +26,7 @@ AVRDUDE_FLAGS += -c wiring
 all:	$(BINS) 
 
 #common objects
+
 %.o:	%.c 
 	$(CC) $(CC_OPTS) -c  -o $@ $<
 
@@ -32,3 +36,7 @@ all:	$(BINS)
 %.elf:	%.o $(OBJS)
 	$(CC) $(CC_OPTS) -o $@ $< $(OBJS) $(LIBS)
 
+%.hex: %.elf
+	$(CHEX) $(CHEX_OPTS) $< $@
+
+#avrdude -p m2560 -P /dev/ttyACM0 -c  -b 115200 -D -q -V -C /usr/share/arduino/hardware/tools/avr/../avrdude.conf -c wiring -U flash:w:server.hex:i

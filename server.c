@@ -5,10 +5,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
-
-#define F_CPU 16000000UL
-#define BAUD 19600
-#define MYUBRR (F_CPU/16/BAUD-1)
+#include "./avr_common/uart.h"
 
 //******************Setting Output Pins******************//
 
@@ -59,67 +56,7 @@ ISR(TIMER5_COMPA_vect){
 }
 //********************************************************/
 
-//*****************UART Functions*****************//
-
-
-void USART_init(){
-    /* Set baund rate */
-    // UBBR0H = (uint8_t)(MYUBRR>>8);
-    // UBBR0L = (uint8_t)MYUBRR;
-    
-    /* 8-bit data */
-    UCSR0C = (1<<UCSZ01) | (1<<UCSZ00);  
-  
-    /* Enable RX and TX */
-    UCSR0B = (1<<RXEN0) | (1<<TXEN0) | (1<<RXCIE0);
-}
-
-void UART_putChar(uint8_t c){
-  /* 
-    * Wait for transmission completed, 
-    * looping on status bit
-  */
-  while ( !(UCSR0A & (1<<UDRE0)) );
-  /* Start transmission */
-  UDR0 = c;
-}
-
-uint8_t UART_getChar(void){
-  /*
-    * Wait for incoming data, 
-    * looping on status bit 
-  */
-  while ( !(UCSR0A & (1<<RXC0)) );
-  
-  /* Return the data */
-  return UDR0;
-    
-}
-
-uint8_t UART_getString(uint8_t* buf){
-  uint8_t* b0=buf; //beginning of buffer
-  while(1){
-    uint8_t c=UART_getChar();
-    *buf=c; ++buf;
-    // reading a 0 terminates the string
-    if (c==0) return buf-b0;
-    // reading a \n  or a \r return results
-    // in forcedly terminating the string
-    if(c=='\n'||c=='\r'){
-      *buf=0; ++buf; return buf-b0;
-    }
-  }
-}
-
-void UART_putString(uint8_t* buf){
-  while(*buf){
-    UART_putChar(*buf); ++buf;
-  }
-}
-
-//********************************************************/
-
-void ADC_init(){
+void ADC_init(void){
 
     /* Clear the ADMUX register */
     ADMUX = 0;
@@ -156,7 +93,7 @@ void ADC_init(){
    ADCSRA |= (1 << ADEN) | (1 << ADPS0) | (1 << ADPS1);
 }
 
-void oscilloscope(){
+void oscilloscope(void){
 
   /* Variables declaration */
   float Volt_converter = 5/1023.0;
@@ -237,7 +174,7 @@ void oscilloscope(){
    memset(sent_message, 0, sizeof(sent_message));
 }  
 
-int main(){
+int main(void){
 
     /* Variables declaration */
     unsigned char user_input[1024];
@@ -250,7 +187,6 @@ int main(){
     /* Inizialize UART */
     UART_init();
     
-
     /* Inizialize ADC */
     ADC_init();
     

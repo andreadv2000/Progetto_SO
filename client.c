@@ -4,6 +4,8 @@
 #include <stdio.h>
 #include <termios.h>
 #include <gd.h>
+#include <errno.h>
+#include <fcntl.h>
 
 #define VALUES 600
 
@@ -37,7 +39,7 @@ int main(){
         return -1;
     }
     
-    ret = tcgettermios(uart_fd, &settigs);
+    ret = tcgetattr(uart_fd, &settings);
     if(ret != 0){
         printf("Error getting termios settings\n");
         return 1;
@@ -61,7 +63,7 @@ int main(){
     * In this case, we set options.c_cflag to B19200 | CS8, which means "19200 bits per second, 8 bits per character". 
   */
    
-   settings.c_cflag |= B19200 | CS8
+   settings.c_cflag |= B19200 | CS8;
    ret = tcsetattr(uart_fd, TCSANOW, &settings);
    if(ret != 0){
        printf("Error settings termios settings %i %s\n", ret, strerror(errno));
@@ -87,13 +89,12 @@ int main(){
    sleep(10);
    
    
-   FILE* data_stream, channel1, channel2, channel3;
-   FILE *wave1 = fopen("wave1.png", "w");
-   FILE *wave2 = fopen("wave2.png", "w");
-   FILE *wave3 = fopen("wave3.png", "w");
+   FILE* data_stream, *channel1, *channel2, *channel3;
+   FILE *wave1, *wave2, *wave3;
    char tokens[4][20];
    char* token;
    int i = 0;
+   int n_values;
    float channel1_values[VALUES];
    float channel2_values[VALUES];
    float channel3_values[VALUES];
@@ -136,7 +137,26 @@ int main(){
       return 0;
    }
    
-   while(1){
+   wave1 = fopen("wave1.png", "w");
+   if(wave1 == NULL){
+      printf("Error opening file wave1.png\n");
+      return 0;
+   }
+
+   wave2 = fopen("wave2.png", "w");
+   if(wave2 == NULL){
+      printf("Error opening file wave2.png\n");
+      return 0;
+   }
+
+   wave3 = fopen("wave3.png", "w");
+   if(wave3 == NULL){
+      printf("Error opening file wave3.png\n");
+      return 0;
+   }
+
+   for(n_values=0 ;n_values < VALUES; n_values++){
+
      ret = read(uart_fd, msg, 1024);
      if(ret < 0){
         printf("Error reading from serial port\n");
@@ -154,24 +174,25 @@ int main(){
         token = strtok(NULL, "-");
         i++;
      }
+
+    
      if(tokens[0] == NULL || tokens[1] == NULL || tokens[2] == NULL || tokens[3] == NULL){
          printf("Error reading from serial port\n");
          return 0;
      } 
-     fprintf(data_steam, "%s %s %s %s\n", tokens[0], tokens[1], tokens[2], tokens[3]);
+
+     fprintf(data_stream, "%s %s %s %s\n", tokens[0], tokens[1], tokens[2], tokens[3]);
      fprintf(channel1, "%s %s\n", tokens[0], tokens[1]);
      fprintf(channel2, "%s %s\n", tokens[0], tokens[2]);
      fprintf(channel3, "%s %s\n", tokens[0], tokens[3]);
 
-     channel1_values[i] = atof(tokens[1]);
-     channel2_values[i] = atof(tokens[2]);
-     channel3_values[i] = atof(tokens[3]);
-     i++;
-
-   }
+     channel1_values[n_values] = atof(tokens[1]);
+     channel2_values[n_values] = atof(tokens[2]);
+     channel3_values[n_values] = atof(tokens[3]);
+  }
 
    /* Draw the images */
-   for(i = 1; i < VALUES; i++) {
+   for(i = 1; i < n_values; i++) {
         gdImageLine(img1, (i - 1) * 800 / VALUES, 600 - channel1_values[i - 1] * 600, i * 800 / VALUES, 600 - channel1_values[i] * 600, black);
         gdImageLine(img2, (i - 1) * 800 / VALUES, 600 - channel2_values[i - 1] * 600, i * 800 / VALUES, 600 - channel2_values[i] * 600, black);
         gdImageLine(img3, (i - 1) * 800 / VALUES, 600 - channel3_values[i - 1] * 600, i * 800 / VALUES, 600 - channel3_values[i] * 600, black);

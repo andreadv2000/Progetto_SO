@@ -5,11 +5,10 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <avr_common/uart.h>
 
-
-
-
+#define F_CPU 16000000UL
+#define BAUD 19600
+#define MYUBRR (F_CPU/16/BAUD-1)
 
 //******************Setting Output Pins******************//
 
@@ -42,21 +41,82 @@
 //********************************************************/
 
 //******************Inizialize Volatile Variables******************//
+
 volatile int interrupt_occurred = 0;
 volatile int interrupt_counter = 0;
+
 //********************************************************/
 
 int ret, idx;
 float sampling_time;
-char sent_message[2024];
-
-
+unsigned char sent_message[2024];
 
 //******************Interrupt Service Routine******************//
+
 ISR(TIMER5_COMPA_vect){
     interrupt_occurred = 1;
     interrupt_counter++;
 }
+//********************************************************/
+
+//*****************UART Functions*****************//
+
+
+void USART_init(){
+    /* Set baund rate */
+    // UBBR0H = (uint8_t)(MYUBRR>>8);
+    // UBBR0L = (uint8_t)MYUBRR;
+    
+    /* 8-bit data */
+    UCSR0C = (1<<UCSZ01) | (1<<UCSZ00);  
+  
+    /* Enable RX and TX */
+    UCSR0B = (1<<RXEN0) | (1<<TXEN0) | (1<<RXCIE0);
+}
+
+void UART_putChar(uint8_t c){
+  /* 
+    * Wait for transmission completed, 
+    * looping on status bit
+  */
+  while ( !(UCSR0A & (1<<UDRE0)) );
+  /* Start transmission */
+  UDR0 = c;
+}
+
+uint8_t UART_getChar(void){
+  /*
+    * Wait for incoming data, 
+    * looping on status bit 
+  */
+  while ( !(UCSR0A & (1<<RXC0)) );
+  
+  /* Return the data */
+  return UDR0;
+    
+}
+
+uint8_t UART_getString(uint8_t* buf){
+  uint8_t* b0=buf; //beginning of buffer
+  while(1){
+    uint8_t c=UART_getChar();
+    *buf=c; ++buf;
+    // reading a 0 terminates the string
+    if (c==0) return buf-b0;
+    // reading a \n  or a \r return results
+    // in forcedly terminating the string
+    if(c=='\n'||c=='\r'){
+      *buf=0; ++buf; return buf-b0;
+    }
+  }
+}
+
+void UART_putString(uint8_t* buf){
+  while(*buf){
+    UART_putChar(*buf); ++buf;
+  }
+}
+
 //********************************************************/
 
 void ADC_init(){
@@ -99,6 +159,7 @@ void ADC_init(){
 void oscilloscope(){
 
   /* Variables declaration */
+  float Volt_converter = 5/1023.0;
   char adc_value_str[20];
   float ADC_values[4] = {0.0,0.0,0.0,0.0};
   
@@ -141,10 +202,18 @@ void oscilloscope(){
     */
 
    /* Set ADC channel */
-    ADMUX |= (i == 0) ? (1 << MUX0) | (1 << REFS0) :
-             (i == 1) ? (1 << MUX0) | (1 << MUX1) | (1<< REFS0) :
-             (i == 2) ? (1 << MUX0) | (1 << MUX2) | (1<< REFS0);
-
+   switch(idx){
+     case 0:
+       ADMUX |= (1 << MUX0) | (1 << REFS0);
+       break;
+     case 1:
+       ADMUX |= (1 << MUX0) | (1 << MUX1) | (1<< REFS0);
+       break;
+     case 2:
+       ADMUX |= (1 << MUX0) | (1 << MUX2) | (1<< REFS0);
+       break;
+    }
+    
     /* Start ADC conversion */
     ADCSRA |= (1 << ADSC);
 
@@ -155,13 +224,13 @@ void oscilloscope(){
   }
    
    sprintf(adc_value_str, "%.4f", interrupt_counter * sampling_time/1000);
-   strcat(sent_message, adc_value_str);
-   strcat(sent_message, "-");
+   strcat((char *)sent_message, adc_value_str);
+   strcat((char *)sent_message, "-");
 
    for (int i = 0; i < 3; i++) {
         sprintf(adc_value_str, "%.4f", ADC_values[i]);
-        strcat(sent_message, adc_value_str);
-        strcat(sent_message, i == 2 ? "\n" : " ");
+        strcat((char *)sent_message, adc_value_str);
+        strcat((char *)sent_message, i == 2 ? "\n" : " ");
    }
 
    UART_putString(sent_message);
@@ -171,7 +240,7 @@ void oscilloscope(){
 int main(){
 
     /* Variables declaration */
-    char user_input[1024];
+    unsigned char user_input[1024];
 
     /* Port Settings */
     const uint8_t portb_mask = (1<<4); // PIN 10
@@ -180,6 +249,7 @@ int main(){
 
     /* Inizialize UART */
     UART_init();
+    
 
     /* Inizialize ADC */
     ADC_init();
@@ -187,14 +257,16 @@ int main(){
     /* Get user input and convert it to float */
     UART_getString(user_input);
 
-    sampling_time = atof(user_input);
+    sampling_time = atof((const char *)user_input);
     int timer = sampling_time;
     
     /* Timer and Wave Generator Settings */
-    TCCR3A = TCCRA3_MASK;
-    TCCR3B = TCCRB3_MASK;
-    TCCR4A = TCCRA4_MASK;
-    TCCR4B = TCCRB4_MASK;
+    TCCR2A = TCCR2A_MASK;
+    TCCR2B = TCCR2B_MASK;
+    TCCR3A = TCCR3A_MASK;
+    TCCR3B = TCCR3B_MASK;
+    TCCR4A = TCCR4A_MASK;
+    TCCR4B = TCCR4B_MASK;
 
    /*
      * Configure timer
@@ -215,7 +287,7 @@ int main(){
      * 4. For handling prescalers, you would need to adjust the value accordingly. For example, if you're using a prescaler of 1024, 
      *    you would calculate the `OCR5A` value like this: 16,000 / 1024 ≈ 15.625   
     */
-   uint16_t ocr = (uint16_t)(15,625 * timer);
+   uint16_t ocr = (uint16_t)(15.625 * timer);
    OCR5A = ocr;
 
    /* Clear all bits of output compare for timer */
@@ -240,7 +312,7 @@ int main(){
      
      /* Increment counters*/
      OCR2A += 3;
-     OCR24A += 2; 
+     OCR4A += 2; 
      OCR3B += 1;
 
      oscilloscope();

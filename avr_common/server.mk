@@ -21,7 +21,7 @@ AVRDUDE_FLAGS += $(AVRDUDE_ERASE_COUNTER)
 AVRDUDE_FLAGS += -D -q -V -C /usr/share/arduino/hardware/tools/avr/../avrdude.conf
 AVRDUDE_FLAGS += -c wiring
 
-.phony:	clean all
+#.phony:	clean all
 
 all:	$(BINS) 
 

@@ -5,6 +5,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <util/delay.h>
 #include "./avr_common/uart.h"
 
 //******************Setting Output Pins******************//
@@ -46,7 +47,7 @@ volatile int interrupt_counter = 0;
 
 int ret, idx;
 float sampling_time;
-unsigned char sent_message[2024];
+char sent_message[256];
 
 //******************Interrupt Service Routine******************//
 
@@ -57,7 +58,7 @@ ISR(TIMER5_COMPA_vect){
 //********************************************************/
 
 void ADC_init(void){
-
+    cli();
     /* Clear the ADMUX register */
     ADMUX = 0;
 
@@ -91,6 +92,7 @@ void ADC_init(void){
      * Set ADC prescaler to 8 bit
     */
    ADCSRA |= (1 << ADEN) | (1 << ADPS0) | (1 << ADPS1);
+   sei();
 }
 
 void oscilloscope(void){
@@ -98,7 +100,7 @@ void oscilloscope(void){
   /* Variables declaration */
   float Volt_converter = 5/1023.0;
   char adc_value_str[20];
-  float ADC_values[4] = {0.0,0.0,0.0,0.0};
+  float ADC_values[3] = {0.0,0.0,0.0};
   
   /* Calcolate ADC values */
   for (idx = 0; idx < 3; idx++){
@@ -160,14 +162,14 @@ void oscilloscope(void){
     ADMUX = 0;
   }
    
-   sprintf(adc_value_str, "%.4f", interrupt_counter * sampling_time/1000);
-   strcat((char *)sent_message, adc_value_str);
-   strcat((char *)sent_message, "-");
+   dtostrf(interrupt_counter * sampling_time/1000, 4, 2, adc_value_str);
+   strcat(sent_message, adc_value_str);
+   strcat(sent_message, "-");
 
    for (int i = 0; i < 3; i++) {
-        sprintf(adc_value_str, "%.4f", ADC_values[i]);
-        strcat((char *)sent_message, adc_value_str);
-        strcat((char *)sent_message, i == 2 ? "\n" : " ");
+        dtostrf(ADC_values[i], 4, 2, adc_value_str);
+        strcat(sent_message, adc_value_str);
+        strcat(sent_message, i == 2 ? "\n" : "-");
    }
 
    UART_putString(sent_message);
@@ -177,7 +179,7 @@ void oscilloscope(void){
 int main(void){
 
     /* Variables declaration */
-    unsigned char user_input[1024];
+    char user_input[256];
 
     /* Port Settings */
     const uint8_t portb_mask = (1<<4); // PIN 10
@@ -186,15 +188,16 @@ int main(void){
 
     /* Inizialize UART */
     UART_init();
+    sei();
     
     /* Inizialize ADC */
     ADC_init();
     
     /* Get user input and convert it to float */
     UART_getString(user_input);
-
-    sampling_time = atof((const char *)user_input);
-    int timer = sampling_time;
+    
+    sampling_time = atof(user_input);
+    float timer = sampling_time;
     
     /* Timer and Wave Generator Settings */
     TCCR2A = TCCR2A_MASK;
@@ -252,7 +255,8 @@ int main(void){
      OCR3B += 1;
 
      oscilloscope();
+     
 
-     if(interrupt_counter > 60000/sampling_time) return 0;
+     if((interrupt_counter+1)*sampling_time > 60000) return 0;
   }
 }

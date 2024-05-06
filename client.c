@@ -15,34 +15,32 @@ int main(){
     //*****************Initialize integer variables*****************//
     int uart_fd, ret, msg_len;
     //*****************Inizialize float variables*****************//
-    float user_input = 0.0;
+    float sampling_time;
     //*****************Initialize char variables*****************//
-    char msg[1024];
-    char sampling_time[1024];
+    char user_msg[2048];
 
      /*
       * The termios functions describe a general terminal interface that
       * is provided to control asynchronous communications ports.(man)
     */
-
     struct termios settings;
 
     /*
      * Opens the serial device file "/dev/ttyACM0" for reading and writing.
      * The flags used in the open() function are:
      * O_RDWR: Open for reading and writing.
-	 * O_NDELAY: Open in non-blocking mode. This means that any read or write operation on the file will not cause the calling process to wait until the device is ready. Instead, the function call will return immediately, indicating both success and failure.
-	 * O_NOCTTY: Do not make this process the system's controlling terminal. This is useful when a program opens the port to communicate with an external device and does not want to become the system's controlling terminal.
+	  * O_NDELAY: Open in non-blocking mode. This means that any read or write operation on the file will not cause the calling process to wait until the device is ready. Instead, the function call will return immediately, indicating both success and failure.
+	  * O_NOCTTY: Do not make this process the system's controlling terminal. This is useful when a program opens the port to communicate with an external device and does not want to become the system's controlling terminal.
     */
     uart_fd = open("/dev/ttyACM0", O_RDWR | O_NOCTTY | O_NDELAY);
     if(uart_fd < 0){
-        perror("Error opening UART device");
+        perror("Client: Error opening UART device");
         return -1;
     }
     
     ret = tcgetattr(uart_fd, &settings);
     if(ret != 0){
-        printf("Error getting termios settings\n");
+        perror("Client: Error getting termios settings");
         return 1;
     }
     
@@ -73,32 +71,28 @@ int main(){
 
    /* Write to the serial port */
    
-   printf("Enter sampling time in ms:");
-   scanf("%f", &user_input);
+   printf("Client: Enter sampling time in ms: ");
+   scanf("%f", &sampling_time);
 
    /* Convert float to string for transmission to the serial port */
-   gcvt(user_input, 3, msg);
-   strcat(msg, "\n");
-   strcpy(sampling_time, msg);
+   sprintf(user_msg, "%.2f\n", sampling_time);
    
    /* Write to the serial port */
-   msg_len = strlen(msg);
-   ret = write(uart_fd, msg, msg_len);
-
-   printf("Sent %d bytes to serial port\n", ret);
+   msg_len = strlen(user_msg);
+   ret = write(uart_fd, user_msg, msg_len);
+   printf("Client:\n ->Samplig time: %s ->Size: %d bytes to serial port\n",user_msg,ret);
+   if(ret < 0){
+       perror("Client: Error writing to serial port");
+       return 1;
+   }
    
-   sleep(10);
    
    
    FILE* data_stream, *channel1, *channel2, *channel3;
    FILE *wave1, *wave2, *wave3;
    char tokens[4][20];
-   char* token;
    int i = 0;
    int n_values;
-   float channel1_values[VALUES];
-   float channel2_values[VALUES];
-   float channel3_values[VALUES];
 
    /* Create images for each channel */ 
     gdImagePtr img1 = gdImageCreate(800, 600);
@@ -116,19 +110,19 @@ int main(){
    /* Open files */
    data_stream = fopen("data.txt", "w+");
    if(data_stream == NULL){
-       printf("Error opening file data.txt\n");
+      perror("Client: Error opening file data.txt\n");
        return 0;
    }
 
    channel1 = fopen("channel1.txt", "w");
    if(channel1 == NULL){
-      printf ("Error opening file channel1.txt\n");
+      perror("Client: Error opening file channel1.txt\n");
       return 0;
    }
 
    channel2 = fopen("channel2.txt", "w");
    if(channel2 == NULL){
-      printf ("Error opening file channel2.txt\n");
+      perror("Client: Error opening file channel2.txt\n");
       return 0;
    }
 
@@ -156,48 +150,87 @@ int main(){
       return 0;
    }
 
-   for(n_values=0 ;n_values < VALUES; n_values++){
+   printf("Client: Reading from serial port...\n");
+   
+   sleep(5);
 
-     ret = read(uart_fd, msg, 1024);
-     if(ret < 0){
-        printf("Error reading from serial port\n");
-        break;
+   /*Store data in data_stream*/
+   memset(user_msg, 0, sizeof(user_msg));
+   
+   int read_bytes = 0;
+   while((ret = read(uart_fd, user_msg, 2048)) > 0){
+    for(i = 0; i < ret; i++){
+        fputc(user_msg[i], data_stream);
+        read_bytes ++;
      }
-     
-     printf("Recived %d bytes from seril port\n", ret);
+     memset(user_msg, 0, sizeof(user_msg));
+     sleep(sampling_time / 1000+1);
+   }
 
-     /* Get the first token */
-     token = strtok(msg, "-");
-
-     /* Walk through other tokens */
-     while(token != NULL && i < 4) {
-        strncpy(tokens[i], token, 20);
-        token = strtok(NULL, "-");
-        i++;
-     }
+   printf("Client: Recived %d bytes from Server\n", read_bytes);
 
     
-     if(tokens[0] == NULL || tokens[1] == NULL || tokens[2] == NULL || tokens[3] == NULL){
+   /*Write data in corresponding channel file*/
+   n_values = 60/(sampling_time/1000);
+   
+   float times[n_values];
+   float channel1_values[n_values];
+   float channel2_values[n_values];
+   float channel3_values[n_values];
+   char line[256];
+   char line_copy[256];
+   char* token;
+   int j;
+   
+   printf("Client: Measured Values:\n\n");
+   fseek(data_stream, 0, SEEK_SET);
+   for(int i = 0; i < n_values; i++){
+       fgets(line, sizeof(line), data_stream);
+
+       strncpy(line_copy, line, sizeof(line));
+       if (line_copy == NULL) perror("Client: Error copying line\n");
+    
+       /* Get the first token */
+       token = strtok(line_copy, "-");
+
+       /* Walk through other tokens */ 
+       j=0;
+       while(token != NULL && j < 4) {
+        strncpy(tokens[j], token, 20);
+        token = strtok(NULL, "-");
+        j++;
+       }
+    
+      if(tokens[0] == NULL || tokens[1] == NULL || tokens[2] == NULL || tokens[3] == NULL){
          printf("Error reading from serial port\n");
          return 0;
-     } 
-
-     fprintf(data_stream, "%s %s %s %s\n", tokens[0], tokens[1], tokens[2], tokens[3]);
+      } 
+     
+     printf("Time:%s | Port2:%s | Port6:%s | Port10:%s\n", tokens[0], tokens[1], tokens[2], tokens[3]);
      fprintf(channel1, "%s %s\n", tokens[0], tokens[1]);
      fprintf(channel2, "%s %s\n", tokens[0], tokens[2]);
      fprintf(channel3, "%s %s\n", tokens[0], tokens[3]);
+     
+     times[i] = atof(tokens[0]);
+     channel1_values[i] = atof(tokens[1]);
+     channel2_values[i] = atof(tokens[2]);
+     channel3_values[i] = atof(tokens[3]);
+     
+     /* Draw the images */
+   //   if(i>0){
+   //     gdImageLine(img1, (i - 1) * 800 / n_values, 600 - channel1_values[i - 1] * 600, i * 800 / n_values, 600 - channel1_values[i] * 600, black);
+   //     gdImageLine(img2, (i - 1) * 800 / n_values, 600 - channel2_values[i - 1] * 600, i * 800 / n_values, 600 - channel2_values[i] * 600, black);
+   //     gdImageLine(img3, (i - 1) * 800 / n_values, 600 - channel3_values[i - 1] * 600, i * 800 / n_values, 600 - channel3_values[i] * 600, black);
+   //   }
 
-     channel1_values[n_values] = atof(tokens[1]);
-     channel2_values[n_values] = atof(tokens[2]);
-     channel3_values[n_values] = atof(tokens[3]);
-  }
+   if(i>0){
+       gdImageLine(img1, times[i-1] * 800 / 60, 600 - channel1_values[i - 1] * 600, times[i] * 800 / 60, 600 - channel1_values[i] * 600, black);
+       gdImageLine(img2, times[i-1] * 800 / 60, 600 - channel2_values[i - 1] * 600, times[i] * 800 / 60, 600 - channel2_values[i] * 600, black);
+       gdImageLine(img3, times[i-1] * 800 / 60, 600 - channel3_values[i - 1] * 600, times[i] * 800 / 60, 600 - channel3_values[i] * 600, black);
+     }
 
-   /* Draw the images */
-   for(i = 1; i < n_values; i++) {
-        gdImageLine(img1, (i - 1) * 800 / VALUES, 600 - channel1_values[i - 1] * 600, i * 800 / VALUES, 600 - channel1_values[i] * 600, black);
-        gdImageLine(img2, (i - 1) * 800 / VALUES, 600 - channel2_values[i - 1] * 600, i * 800 / VALUES, 600 - channel2_values[i] * 600, black);
-        gdImageLine(img3, (i - 1) * 800 / VALUES, 600 - channel3_values[i - 1] * 600, i * 800 / VALUES, 600 - channel3_values[i] * 600, black);
     }
+
 
    if(wave1 != NULL && wave2 != NULL && wave3 != NULL) {
         gdImagePng(img1, wave1);

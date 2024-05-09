@@ -4,11 +4,11 @@
 #include <stdio.h>
 #include <termios.h>
 #include <gd.h>
+#include <gdfonts.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <unistd.h>
 
-#define VALUES 600
 
 int main(){
 
@@ -99,13 +99,19 @@ int main(){
     gdImagePtr img2 = gdImageCreate(800, 600);
     gdImagePtr img3 = gdImageCreate(800, 600);
 
-    /* Allocate some colors */
-    int white = gdImageColorAllocate(img1, 255, 255, 255);
-    int black = gdImageColorAllocate(img1, 0, 0, 0);
-    gdImageColorAllocate(img2, 255, 255, 255);
-    gdImageColorAllocate(img2, 0, 0, 0);
-    gdImageColorAllocate(img3, 255, 255, 255);
-    gdImageColorAllocate(img3, 0, 0, 0);
+   /* Allocate some colors */
+   int bg_color1 = gdImageColorAllocate(img1, 255, 255, 255);
+   int bg_color2 = gdImageColorAllocate(img2, 255, 255, 255);
+   int bg_color3 = gdImageColorAllocate(img3, 255, 255, 255);
+
+   int axiscolor1 = gdImageColorAllocate(img1,0,0,0);
+   int axiscolor2 = gdImageColorAllocate(img2,0,0,0);
+   int axiscolor3 = gdImageColorAllocate(img3,0,0,0);
+
+   int red = gdImageColorAllocate(img1, 255, 0, 0);
+   int green = gdImageColorAllocate(img2, 0, 255, 0);
+   int blue = gdImageColorAllocate(img3, 0, 0, 255);
+   
 
    /* Open files */
    data_stream = fopen("data.txt", "w+");
@@ -158,7 +164,7 @@ int main(){
    memset(user_msg, 0, sizeof(user_msg));
    
    int read_bytes = 0;
-   while((ret = read(uart_fd, user_msg, 2048)) > 0){
+   while((ret = read(uart_fd, user_msg, 2048))>0){
     for(i = 0; i < ret; i++){
         fputc(user_msg[i], data_stream);
         read_bytes ++;
@@ -189,6 +195,8 @@ int main(){
 
        strncpy(line_copy, line, sizeof(line));
        if (line_copy == NULL) perror("Client: Error copying line\n");
+
+       line_copy[strcspn(line_copy, "\n")] = 0;
     
        /* Get the first token */
        token = strtok(line_copy, "-");
@@ -204,31 +212,58 @@ int main(){
       if(tokens[0] == NULL || tokens[1] == NULL || tokens[2] == NULL || tokens[3] == NULL){
          printf("Error reading from serial port\n");
          return 0;
-      } 
+      }
+       
+
+
      
-     printf("Time:%s | Port2:%s | Port6:%s | Port10:%s\n", tokens[0], tokens[1], tokens[2], tokens[3]);
-     fprintf(channel1, "%s %s\n", tokens[0], tokens[1]);
-     fprintf(channel2, "%s %s\n", tokens[0], tokens[2]);
-     fprintf(channel3, "%s %s\n", tokens[0], tokens[3]);
+     printf("Time:%ss | Port2:%sV | Port6:%sV | Port10:%sV\n", tokens[0], tokens[1], tokens[2], tokens[3]);
+     fprintf(channel1, "Time: %ss Value: %sV\n", tokens[0], tokens[1]);
+     fprintf(channel2, "Time: %ss Value: %sV\n", tokens[0], tokens[2]);
+     fprintf(channel3, "Time: %ss Value: %sV\n", tokens[0], tokens[3]);
      
      times[i] = atof(tokens[0]);
      channel1_values[i] = atof(tokens[1]);
      channel2_values[i] = atof(tokens[2]);
      channel3_values[i] = atof(tokens[3]);
-     
-     /* Draw the images */
-   //   if(i>0){
-   //     gdImageLine(img1, (i - 1) * 800 / n_values, 600 - channel1_values[i - 1] * 600, i * 800 / n_values, 600 - channel1_values[i] * 600, black);
-   //     gdImageLine(img2, (i - 1) * 800 / n_values, 600 - channel2_values[i - 1] * 600, i * 800 / n_values, 600 - channel2_values[i] * 600, black);
-   //     gdImageLine(img3, (i - 1) * 800 / n_values, 600 - channel3_values[i - 1] * 600, i * 800 / n_values, 600 - channel3_values[i] * 600, black);
-   //   }
 
-   if(i>0){
-       gdImageLine(img1, times[i-1] * 800 / 60, 600 - channel1_values[i - 1] * 600, times[i] * 800 / 60, 600 - channel1_values[i] * 600, black);
-       gdImageLine(img2, times[i-1] * 800 / 60, 600 - channel2_values[i - 1] * 600, times[i] * 800 / 60, 600 - channel2_values[i] * 600, black);
-       gdImageLine(img3, times[i-1] * 800 / 60, 600 - channel3_values[i - 1] * 600, times[i] * 800 / 60, 600 - channel3_values[i] * 600, black);
-     }
+    }
 
+    /* Draw the x-axis */
+    gdImageLine(img1, 0, 550, 800, 550, axiscolor1);
+    gdImageLine(img2, 0, 550, 800, 550, axiscolor2);
+    gdImageLine(img3, 0, 550, 800, 550, axiscolor3);
+    char axis_values[5];
+   
+    /* Draw the y-axis */
+    gdImageLine(img1, 50, 0, 50, 600, axiscolor1);
+    gdImageLine(img2, 50, 0, 50, 600, axiscolor2);
+    gdImageLine(img3, 50, 0, 50, 600, axiscolor3);
+    
+
+    int idx = 50;
+    for (int x = 0; x < 70; x+=10) {
+      sprintf(axis_values, "%d", x);
+      gdImageString(img1, gdFontGetSmall(), x+idx, 550 + 10, (unsigned char *)axis_values, axiscolor1);
+      gdImageString(img2, gdFontGetSmall(), x+idx, 550 + 10 , (unsigned char *)axis_values, axiscolor2);
+      gdImageString(img3, gdFontGetSmall(), x+idx, 550 + 10 , (unsigned char *)axis_values, axiscolor3);
+      idx += (int)(750/6);
+    }
+
+    idx = 0;
+    for(int y = 0; y < 6; y++){
+        sprintf(axis_values, "%d", y);
+        gdImageString(img1, gdFontGetSmall(), 50-10, 550 - idx, (unsigned char *)axis_values, axiscolor1);
+        gdImageString(img2, gdFontGetSmall(), 50-10, 550 - idx, (unsigned char *)axis_values, axiscolor2);
+        gdImageString(img3, gdFontGetSmall(), 50-10, 550 - idx, (unsigned char *)axis_values, axiscolor3);
+        idx += (int)(550/5);
+    }
+
+    /* Draw the images */
+    for(i = 1; i < n_values; i++){
+        gdImageLine(img1, 50+times[i-1]*750/60, 550-channel1_values[i-1]*550/5, 50+times[i]*750/60, 550-channel1_values[i]*550/5, red);
+        gdImageLine(img2, 50+times[i-1]*750/60, 550-channel2_values[i-1]*550/5, 50+times[i]*750/60, 550-channel2_values[i]*550/5, green);
+        gdImageLine(img3, 50+times[i-1]*750/60, 550-channel3_values[i-1]*550/5, 50+times[i]*750/60, 550-channel3_values[i]*550/5, blue);
     }
 
 
@@ -240,9 +275,13 @@ int main(){
         fclose(wave2);
         fclose(wave3);
     }
-   
+
+   /* Close files */
    fclose(data_stream);
    fclose(channel1);
    fclose(channel2);
    fclose(channel3);
+   gdImageDestroy(img1);
+   gdImageDestroy(img2);
+   gdImageDestroy(img3);
 }

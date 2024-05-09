@@ -1,12 +1,75 @@
-5.00 0.09
-10.00 0.07
-15.00 5.00
-20.00 0.03
-25.00 0.09
-30.00 5.00
-35.00 5.00
-40.00 0.00
-45.00 5.00
-50.00 0.07
-55.00 0.14
-60.00 5.00
+Time: 0.8000s Value: 5.9951V
+Time: 1.6000s Value: 6.2483V
+Time: 2.4000s Value: 6.2444V
+Time: 3.2000s Value: 5.4985V
+Time: 4.0000s Value: 5.5000V
+Time: 4.8000s Value: 6.2463V
+Time: 5.6000s Value: 4.8622V
+Time: 6.4000s Value: 4.7493V
+Time: 7.2000s Value: 6.2407V
+Time: 8.0000s Value: 5.5000V
+Time: 8.8000s Value: 3.9983V
+Time: 9.6000s Value: 6.2500V
+Time: 10.4000s Value: 6.2500V
+Time: 11.2000s Value: 3.6877V
+Time: 12.0000s Value: 5.5193V
+Time: 12.8000s Value: 6.2483V
+Time: 13.6000s Value: 3.4983V
+Time: 14.4000s Value: 4.0164V
+Time: 15.2000s Value: 6.2478V
+Time: 16.0000s Value: 2.9377V
+Time: 16.8000s Value: 2.2483V
+Time: 17.6000s Value: 6.2500V
+Time: 18.4000s Value: 4.2500V
+Time: 19.2000s Value: 1.4985V
+Time: 20.0000s Value: 5.2500V
+Time: 20.8000s Value: 5.7454V
+Time: 21.6000s Value: 1.0000V
+Time: 22.4000s Value: 3.7500V
+Time: 23.2000s Value: 5.7500V
+Time: 24.0000s Value: 2.4905V
+Time: 24.8000s Value: 2.5000V
+Time: 25.6000s Value: 6.2493V
+Time: 26.4000s Value: 2.9939V
+Time: 27.2000s Value: 1.2500V
+Time: 28.0000s Value: 6.2485V
+Time: 28.8000s Value: 3.4983V
+Time: 29.6000s Value: 0.0029V
+Time: 30.4000s Value: 5.0000V
+Time: 31.2000s Value: 3.9993V
+Time: 32.0000s Value: 0.7500V
+Time: 32.8000s Value: 3.2529V
+Time: 33.6000s Value: 5.0000V
+Time: 34.4000s Value: 1.7500V
+Time: 35.2000s Value: 0.5017V
+Time: 36.0000s Value: 5.2500V
+Time: 36.8000s Value: 2.5000V
+Time: 37.6000s Value: 0.0017V
+Time: 38.4000s Value: 4.2500V
+Time: 39.2000s Value: 3.0000V
+Time: 40.0000s Value: 0.0007V
+Time: 40.8000s Value: 3.7529V
+Time: 41.6000s Value: 4.2483V
+Time: 42.4000s Value: 0.0029V
+Time: 43.2000s Value: 1.9096V
+Time: 44.0000s Value: 4.7500V
+Time: 44.8000s Value: 0.9946V
+Time: 45.6000s Value: 1.0000V
+Time: 46.4000s Value: 4.2500V
+Time: 47.2000s Value: 1.7485V
+Time: 48.0000s Value: 0.0000V
+Time: 48.8000s Value: 3.2500V
+Time: 49.6000s Value: 2.2405V
+Time: 50.4000s Value: 0.0000V
+Time: 51.2000s Value: 2.0000V
+Time: 52.0000s Value: 3.0000V
+Time: 52.8000s Value: 0.0061V
+Time: 53.6000s Value: 0.5000V
+Time: 54.4000s Value: 2.7674V
+Time: 55.2000s Value: 0.0000V
+Time: 56.0000s Value: 0.0000V
+Time: 56.8000s Value: 2.2500V
+Time: 57.6000s Value: 0.9946V
+Time: 58.4000s Value: 0.0029V
+Time: 59.2000s Value: 1.2517V
+Time: 60.0000s Value: 1.7500V

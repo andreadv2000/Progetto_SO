@@ -8,7 +8,7 @@ void UART_init(void){
   UBRR0L = (uint8_t)MYUBRR;
 
   UCSR0C = (1<<UCSZ01) | (1<<UCSZ00); /* 8-bit data */ 
-  UCSR0B = (1<<RXEN0) | (1<<TXEN0);   /* Enable RX and TX */  
+  UCSR0B = (1<<RXEN0) | (1<<TXEN0); /* Enable RX and TX */  
 
 }
 

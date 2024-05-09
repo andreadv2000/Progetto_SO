@@ -36,6 +36,7 @@
 #define TCCR3A_MASK (1<<COM3B0)|(1<<COM3B1)|(1<<WGM30) //PIN 2
 #define TCCR3B_MASK (1<<CS30)|(1<<CS31)|(1<<WGM32) //PIN 2
 
+
 //********************************************************/
 
 //******************Inizialize Volatile Variables******************//
@@ -101,6 +102,13 @@ void oscilloscope(void){
   float Volt_converter = 5/1023.0;
   char adc_value_str[20];
   float ADC_values[3] = {0.0,0.0,0.0};
+
+  uint8_t MUX_settings[] = {
+    (1 << MUX0) | (1 << REFS0),
+    (1 << MUX0) | (1 << MUX1) | (1<< REFS0),
+    (1 << MUX0) | (1 << MUX2) | (1<< REFS0)
+  };
+
   
   /* Calcolate ADC values */
   for (idx = 0; idx < 3; idx++){
@@ -140,40 +148,47 @@ void oscilloscope(void){
      * REF value is 5v
     */
 
-   /* Set ADC channel */
-   switch(idx){
-     case 0:
-       ADMUX |= (1 << MUX0) | (1 << REFS0);
-       break;
-     case 1:
-       ADMUX |= (1 << MUX0) | (1 << MUX1) | (1<< REFS0);
-       break;
-     case 2:
-       ADMUX |= (1 << MUX0) | (1 << MUX2) | (1<< REFS0);
-       break;
-    }
-    
-    /* Start ADC conversion */
-    ADCSRA |= (1 << ADSC);
+    /* Set ADC channel */
+    ADMUX |= MUX_settings[idx];
 
-    /* Wait for ADC conversion to complete */
-    while(ADCSRA & (1 << ADSC));
-    ADC_values[idx] = ADC * Volt_converter;
+    /* Add delay to allow the sample and hold capacitor to charge */
+    //_delay_ms(10);
+
+    float ADC_sum = 0.0;
+
+    /* Take sub-samples and average them */
+    for(int k = 0; k < 25; k++){
+       /* Start ADC conversion */
+       ADCSRA |= (1 << ADSC);
+
+       /* Wait for ADC conversion to complete */
+       while(ADCSRA & (1 << ADSC));
+
+       ADC_sum += ADC;
+    }
+
+    /* Calculate average */
+    ADC_values[idx] = (ADC_sum /20.0) * Volt_converter;
+
+    /* Reset ADMUX */
     ADMUX = 0;
+
+
   }
    
-   dtostrf(interrupt_counter * sampling_time/1000, 4, 2, adc_value_str);
+   dtostrf(interrupt_counter * sampling_time/1000, 4, 4, adc_value_str);
    strcat(sent_message, adc_value_str);
    strcat(sent_message, "-");
 
    for (int i = 0; i < 3; i++) {
-        dtostrf(ADC_values[i], 4, 2, adc_value_str);
+        dtostrf(ADC_values[i], 4, 4, adc_value_str);
         strcat(sent_message, adc_value_str);
         strcat(sent_message, i == 2 ? "\n" : "-");
    }
 
    UART_putString(sent_message);
    memset(sent_message, 0, sizeof(sent_message));
+   memset(ADC_values, 0, sizeof(ADC_values));
 }  
 
 int main(void){
@@ -194,6 +209,7 @@ int main(void){
     ADC_init();
     
     /* Get user input and convert it to float */
+    
     UART_getString(user_input);
     
     sampling_time = atof(user_input);
@@ -236,7 +252,7 @@ int main(void){
    
    /* Set the pin as output */
    DDRB |= portb_mask; //PIN 10
-   DDRH |= porth_mask; //PIN 8
+   DDRH |= porth_mask; //PIN 6
    DDRE |= porte_mask; //PIN 2
 
    /* Enable timer interrupt */
@@ -250,9 +266,9 @@ int main(void){
      interrupt_occurred = 0;
      
      /* Increment counters*/
-     OCR2A += 3;
-     OCR4A += 2; 
-     OCR3B += 1;
+     OCR2A += 9; //PIN 10
+     OCR4A += 6; //PIN 6
+     OCR3B += 3; //PIN 2
 
      oscilloscope();
      

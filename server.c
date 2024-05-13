@@ -20,21 +20,24 @@
   * This action can either be to set, clear,or toggle the output pin 
 */
 /*
-  * CS2 = 011 for prescaler = 64 => cloack = 16MHz/64 = 250kHz => time in between each update of OCR2x = 1/250kHz = 0.4ms
-  * CS3 = 011 for prescaler = 64 => cloack = 16MHz/64 = 250kHz => time in between each update of OCR3x = 1/250kHz = 0.4ms
-  * CS4 = 011 for prescaler = 64 => cloack = 16MHz/64 = 250kHz => time in between each update of OCR4x = 1/250kHz = 0.4ms
+  * CS2 = 011 for prescaler = 32 => cloack = 16MHz/32 = 500kHz => time in between each update of OCR2x = 1/500kHz = 0.2us
+  * CS3 = 011 for prescaler = 32 => cloack = 16MHz/32 = 500kHz => time in between each update of OCR3x = 1/500kHz = 0.2us
+  * CS4 = 011 for prescaler = 32 => cloack = 16MHz/32 = 500kHz => time in between each update of OCR4x = 1/500kHz = 0.2us
 */
 /*
   * COM2A = 11 set OC2A on compare match(set Output to hight level), clear OC2A at BOTTOM,non-inverting mode(hight level on compare match)
   * COM3B = 11 set OC3B on compare match(set Output to hight level), clear OC3B at BOTTOM,non-inverting mode(hight level on compare match)
   * COM4C = 11 set OC4C on compare match(set Output to hight level), clear OC4C at BOTTOM,non-inverting mode(hight level on compare match)
 */
-#define TCCR2A_MASK (1<<COM2A1)|(1<<COM2A0)|(1<<WGM20) // PIN 10
-#define TCCR2B_MASK (1<<CS20)|(1<<CS21)|(1<<WGM22) // PIN 10
+
+#define TCCR1A_MASK (1<<COM1B1)|(1<<COM1B0)|(1<<WGM10) // PIN 12
+#define TCCR1B_MASK (1<<CS10)|(1<<CS11)|(1<<WGM12) // PIN 12
 #define TCCR4A_MASK (1<<COM4A0)|(1<<COM4A1)|(1<<WGM40) //PIN 6 
 #define TCCR4B_MASK (1<<CS40)|(1<<CS41)|(1<<WGM42) //PIN 6
 #define TCCR3A_MASK (1<<COM3B0)|(1<<COM3B1)|(1<<WGM30) //PIN 2
 #define TCCR3B_MASK (1<<CS30)|(1<<CS31)|(1<<WGM32) //PIN 2
+
+
 
 
 //********************************************************/
@@ -92,7 +95,8 @@ void ADC_init(void){
      * Enable ADC
      * Set ADC prescaler to 8 bit
     */
-   ADCSRA |= (1 << ADEN) | (1 << ADPS0) | (1 << ADPS1);
+   //ADCSRA |= (1 << ADEN) | (1 << ADPS0) | (1 << ADPS1);
+   ADCSRA |= (1 << ADEN) | (1 << ADPS0) | (1 << ADPS1) | (1 << ADPS2);
    sei();
 }
 
@@ -103,17 +107,7 @@ void oscilloscope(void){
   char adc_value_str[20];
   float ADC_values[3] = {0.0,0.0,0.0};
 
-  uint8_t MUX_settings[] = {
-    (1 << MUX0) | (1 << REFS0),
-    (1 << MUX0) | (1 << MUX1) | (1<< REFS0),
-    (1 << MUX0) | (1 << MUX2) | (1<< REFS0)
-  };
-
-  
-  /* Calcolate ADC values */
-  for (idx = 0; idx < 3; idx++){
-
-     /*
+  /*
      * ADMUX Register Description:
      * Bit 7 – REFS1:0: Aref Select
        REFS1:0 is the AREF select bit. This bit selects the voltage reference for the analog-to-digital converter (ADC).
@@ -127,10 +121,10 @@ void oscilloscope(void){
        These bits select the input channel. When MUX3 is cleared, the MSB of the 4-channel multiplexer is cleared.
        *  0000 = ADC0
        *  0001 = ADC1 <--- we are using this channel
-       *  0010 = ADC2 <--- we are using this channel
+       *  0010 = ADC2 
        *  0011 = ADC3 <--- we are using this channel
        *  0100 = ADC4
-       *  0101 = ADC5
+       *  0101 = ADC5 <--- we are using this channel
        *  0110 = ADC6
        *  0111 = ADC7
        *  1000 = ADC0
@@ -148,27 +142,38 @@ void oscilloscope(void){
      * REF value is 5v
     */
 
+  uint8_t MUX_settings[] = {
+    (1 << MUX0) | (1 << REFS0),
+    (1 << MUX0) | (1 << MUX1) | (1<< REFS0),
+    (1 << MUX2) | (1 << MUX0) | (1<< REFS0)
+  };
+
+  
+
+  /* Calcolate ADC values */
+  for (idx = 0; idx < 3; idx++){
+
     /* Set ADC channel */
     ADMUX |= MUX_settings[idx];
 
-    /* Add delay to allow the sample and hold capacitor to charge */
-    //_delay_ms(10);
-
     float ADC_sum = 0.0;
 
-    /* Take sub-samples and average them */
-    for(int k = 0; k < 25; k++){
+    /* 
+     * Take sub-samples and average them 
+     * for fixing the sample and hold issue 
+    */
+    for(int k = 0; k < 60; k++){
        /* Start ADC conversion */
        ADCSRA |= (1 << ADSC);
 
        /* Wait for ADC conversion to complete */
        while(ADCSRA & (1 << ADSC));
 
-       ADC_sum += ADC;
+       ADC_sum += (float)ADC;
     }
 
     /* Calculate average */
-    ADC_values[idx] = (ADC_sum /20.0) * Volt_converter;
+    ADC_values[idx] = (ADC_sum / 60.0) * Volt_converter;
 
     /* Reset ADMUX */
     ADMUX = 0;
@@ -197,7 +202,7 @@ int main(void){
     char user_input[256];
 
     /* Port Settings */
-    const uint8_t portb_mask = (1<<4); // PIN 10
+    const uint8_t portb_mask = (1<<6); // PIN 12
     const uint8_t porth_mask = (1<<3); // PIN 6
     const uint8_t porte_mask = (1<<4); // PIN 2
 
@@ -216,13 +221,19 @@ int main(void){
     float timer = sampling_time;
     
     /* Timer and Wave Generator Settings */
-    TCCR2A = TCCR2A_MASK;
-    TCCR2B = TCCR2B_MASK;
-    TCCR3A = TCCR3A_MASK;
-    TCCR3B = TCCR3B_MASK;
-    TCCR4A = TCCR4A_MASK;
-    TCCR4B = TCCR4B_MASK;
+    
+    TCCR1A = TCCR1A_MASK; //PIN 12
+    TCCR1B = TCCR1B_MASK; //PIN 12
+    TCCR4A = TCCR4A_MASK; //PIN 6
+    TCCR4B = TCCR4B_MASK; //PIN 6
+    TCCR3A = TCCR3A_MASK; //PIN 2
+    TCCR3B = TCCR3B_MASK; //PIN 2
 
+
+    ICR1 = 63000; //PIN 12
+    ICR4 = 62000; //PIN 6
+    ICR3 = 61500; //PIN 2
+ 
    /*
      * Configure timer
      * set prescaler to 1024
@@ -235,23 +246,23 @@ int main(void){
      * Cloak is 16MHz
      * 1. Convert the desired interval to seconds: 1 ms = 0.001 s
      * 2. Calculate the number of clock cycles in this interval: 0.001 s * 16,000,000 Hz = 16,000 cycles
-     * 3. The `OCR5A` register is 16 bits, so it can hold values up to 65,535. 
+     * 3. The OCR5A register is 16 bits, so it can hold values up to 65,535. 
      *    The timer is in CTC mode (Clear Timer on Compare match), 
-     *    the timer will reset to 0 every time it reaches the value in `OCR5A`. 
-     *    So, to get a timer interval of 16,000 cycles, you would set `OCR5A` to 16,000.
+     *    the timer will reset to 0 every time it reaches the value in OCR5A. 
+     *    So, to get a timer interval of 16,000 cycles, you would set OCR5A to 16,000.
      * 4. For handling prescalers, you would need to adjust the value accordingly. For example, if you're using a prescaler of 1024, 
-     *    you would calculate the `OCR5A` value like this: 16,000 / 1024 ≈ 15.625   
+     *    you would calculate the OCR5A value like this: 16,000 / 1024 ≈ 15.625   
     */
    uint16_t ocr = (uint16_t)(15.625 * timer);
    OCR5A = ocr;
 
    /* Clear all bits of output compare for timer */
-   OCR2A = 0; //PIN 10
+   OCR1B = 0; //PIN 12
    OCR4A = 0; //PIN 6
    OCR3B = 0; //PIN 2
    
    /* Set the pin as output */
-   DDRB |= portb_mask; //PIN 10
+   DDRB |= portb_mask; //PIN 12
    DDRH |= porth_mask; //PIN 6
    DDRE |= porte_mask; //PIN 2
 
@@ -266,9 +277,9 @@ int main(void){
      interrupt_occurred = 0;
      
      /* Increment counters*/
-     OCR2A += 9; //PIN 10
-     OCR4A += 6; //PIN 6
-     OCR3B += 3; //PIN 2
+     OCR1B += ICR1/2; //PIN 12
+     OCR4A += ICR4/2; //PIN 6
+     OCR3B += ICR3/2; //PIN 2
 
      oscilloscope();
      

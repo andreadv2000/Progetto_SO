@@ -62,7 +62,11 @@ int main(){
     * In this case, we set options.c_cflag to B19200 | CS8, which means "19200 bits per second, 8 bits per character". 
   */
    
-   settings.c_cflag |= B19200 | CS8;
+   /* Set the baud rate */
+   settings.c_cflag |= CS8;
+   cfsetispeed(&settings, B19200);
+   cfsetospeed(&settings, B19200);
+
    ret = tcsetattr(uart_fd, TCSANOW, &settings);
    if(ret != 0){
        printf("Error settings termios settings %i %s\n", ret, strerror(errno));
@@ -89,7 +93,7 @@ int main(){
    
    
    FILE* data_stream, *channel1, *channel2, *channel3;
-   FILE *wave1, *wave2, *wave3;
+   FILE *wave10, *wave6, *wave2;
    char tokens[4][20];
    int i = 0;
    int n_values;
@@ -138,21 +142,21 @@ int main(){
       return 0;
    }
    
-   wave1 = fopen("wave1.png", "w");
-   if(wave1 == NULL){
-      printf("Error opening file wave1.png\n");
+   wave10 = fopen("wave10.png", "w");
+   if(wave10 == NULL){
+      printf("Error opening file wave10.png\n");
+      return 0;
+   }
+
+   wave6 = fopen("wave6.png", "w");
+   if(wave6 == NULL){
+      printf("Error opening file wave6.png\n");
       return 0;
    }
 
    wave2 = fopen("wave2.png", "w");
    if(wave2 == NULL){
       printf("Error opening file wave2.png\n");
-      return 0;
-   }
-
-   wave3 = fopen("wave3.png", "w");
-   if(wave3 == NULL){
-      printf("Error opening file wave3.png\n");
       return 0;
    }
 
@@ -217,7 +221,7 @@ int main(){
 
 
      
-     printf("Time:%ss | Port2:%sV | Port6:%sV | Port10:%sV\n", tokens[0], tokens[1], tokens[2], tokens[3]);
+     printf("Time:%ss | Port10:%sV | Port6:%sV | Port2:%sV\n", tokens[0], tokens[1], tokens[2], tokens[3]);
      fprintf(channel1, "Time: %ss Value: %sV\n", tokens[0], tokens[1]);
      fprintf(channel2, "Time: %ss Value: %sV\n", tokens[0], tokens[2]);
      fprintf(channel3, "Time: %ss Value: %sV\n", tokens[0], tokens[3]);
@@ -261,19 +265,19 @@ int main(){
 
     /* Draw the images */
     for(i = 1; i < n_values; i++){
-        gdImageLine(img1, 50+times[i-1]*750/60, 550-channel1_values[i-1]*550/5, 50+times[i]*750/60, 550-channel1_values[i]*550/5, red);
-        gdImageLine(img2, 50+times[i-1]*750/60, 550-channel2_values[i-1]*550/5, 50+times[i]*750/60, 550-channel2_values[i]*550/5, green);
-        gdImageLine(img3, 50+times[i-1]*750/60, 550-channel3_values[i-1]*550/5, 50+times[i]*750/60, 550-channel3_values[i]*550/5, blue);
+      gdImageLine(img1, 50+times[i-1]*750/60, 550-channel1_values[i-1]*550/5, 50+times[i]*750/60, 550-channel1_values[i]*550/5, red);
+      gdImageLine(img2, 50+times[i-1]*750/60, 550-channel2_values[i-1]*550/5, 50+times[i]*750/60, 550-channel2_values[i]*550/5, green);
+      gdImageLine(img3, 50+times[i-1]*750/60, 550-channel3_values[i-1]*550/5, 50+times[i]*750/60, 550-channel3_values[i]*550/5, blue);
     }
 
 
-   if(wave1 != NULL && wave2 != NULL && wave3 != NULL) {
-        gdImagePng(img1, wave1);
-        gdImagePng(img2, wave2);
-        gdImagePng(img3, wave3);
-        fclose(wave1);
+   if(wave10 != NULL && wave6 != NULL && wave2 != NULL) {
+        gdImagePng(img1, wave10);
+        gdImagePng(img2, wave6);
+        gdImagePng(img3, wave2);
+        fclose(wave10);
+        fclose(wave6);
         fclose(wave2);
-        fclose(wave3);
     }
 
    /* Close files */

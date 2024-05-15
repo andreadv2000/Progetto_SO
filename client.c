@@ -74,9 +74,10 @@ int main(){
    }
 
    /* Write to the serial port */
-   
-   printf("Client: Enter sampling time in ms: ");
-   scanf("%f", &sampling_time);
+   do {
+    printf("Client: Enter sampling time in ms (Max sampling time: 4000ms): \n");
+    scanf("%f", &sampling_time);
+   } while (sampling_time < 100 || sampling_time > 4000);
 
    /* Convert float to string for transmission to the serial port */
    sprintf(user_msg, "%.2f\n", sampling_time);
@@ -199,7 +200,8 @@ int main(){
 
        strncpy(line_copy, line, sizeof(line));
        if (line_copy == NULL) perror("Client: Error copying line\n");
-
+       
+       /* Remove newline character */
        line_copy[strcspn(line_copy, "\n")] = 0;
     
        /* Get the first token */
@@ -219,8 +221,6 @@ int main(){
       }
        
 
-
-     
      printf("Time:%ss | Port10:%sV | Port6:%sV | Port2:%sV\n", tokens[0], tokens[1], tokens[2], tokens[3]);
      fprintf(channel1, "Time: %ss Value: %sV\n", tokens[0], tokens[1]);
      fprintf(channel2, "Time: %ss Value: %sV\n", tokens[0], tokens[2]);

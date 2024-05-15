@@ -110,15 +110,15 @@ void UART_putString(char* buf){
 
 ### Pin di Output
 
-Ho settato i pin 12,6,2 in output e li ho configurati tramite i corridpondenti registri.
+Ho settato i pin 12,6,2 in output e li ho configurati tramite i corrispondenti registri.
 
 * WGM2A = 101 for fast PWM, 8-bit, TOP = 0xFF, update OCR2A at BOTTOM, TOV1 flag set on Top
 * WGM3B = 101 for fast PWM, 8-bit, TOP = 0xFF, update OCR3B at BOTTOM, TOV3 flag set on Top
 * WGM4C = 101 for fast PWM, 8-bit, TOP = 0xFF, update OCR4C at BOTTOM, TOV4 flag set on Top
 
-When a timer is configured for PWM output, it continually counts from 0 up to a maximum value.
-When the count matches a configured compare value,an action is triggered.
-This action can either be to set, clear,or toggle the output pin.
+Quando un timer è configurato per l'uscita PWM, conta continuamente da 0 fino a un valore massimo.
+Quando il conteggio corrisponde a un valore di confronto configurato, viene eseguita un'azione.
+Questa azione può essere quella di attivare un interruzione,o invertire lo stato di un pin.
 
 * CS2 = 011 for prescaler = 64 => cloack = 16MHz/64 = 250kHz => time in between each update of OCR2A =  1/250kHz = 0.4us
 * CS3 = 011 for prescaler = 64 => cloack = 16MHz/64 = 250kHz => time in between each update of OCR3B = 1/250kHz = 0.4us
@@ -182,8 +182,8 @@ Il funzionamento di un ADC può essere spiegato in tre passaggi principali:
 I registri utilizzati saranno:
 
 1. **ADMUX**: Questo registro viene utilizzato per le impostazioni di riferimento e di allineamento dell'ADC.
-Dalla documentazione del microcontrollore, possiamo vedere che ADMUX ha i seguenti bit
-ADMUX Register Description:
+Dalla documentazione del microcontrollore, possiamo vedere che ADMUX ha i seguenti bit:
+
 Bit 7 – REFS1:0: Aref Select
 REFS1:0 is the AREF select bit. This bit selects the voltage reference for the analog-to-digital converter (ADC).
 

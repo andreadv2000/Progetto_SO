@@ -94,7 +94,7 @@ int main(){
    
    
    FILE* data_stream, *channel1, *channel2, *channel3;
-   FILE *wave10, *wave6, *wave2;
+   FILE *wave12, *wave6, *wave2;
    char tokens[4][20];
    int i = 0;
    int n_values;
@@ -143,9 +143,9 @@ int main(){
       return 0;
    }
    
-   wave10 = fopen("wave10.png", "w");
-   if(wave10 == NULL){
-      printf("Error opening file wave10.png\n");
+   wave12 = fopen("wave12.png", "w");
+   if(wave12 == NULL){
+      printf("Error opening file wave12.png\n");
       return 0;
    }
 
@@ -221,7 +221,7 @@ int main(){
       }
        
 
-     printf("Time:%ss | Port10:%sV | Port6:%sV | Port2:%sV\n", tokens[0], tokens[1], tokens[2], tokens[3]);
+     printf("Time:%ss | Port12:%sV | Port6:%sV | Port2:%sV\n", tokens[0], tokens[1], tokens[2], tokens[3]);
      fprintf(channel1, "Time: %ss Value: %sV\n", tokens[0], tokens[1]);
      fprintf(channel2, "Time: %ss Value: %sV\n", tokens[0], tokens[2]);
      fprintf(channel3, "Time: %ss Value: %sV\n", tokens[0], tokens[3]);
@@ -271,11 +271,11 @@ int main(){
     }
 
 
-   if(wave10 != NULL && wave6 != NULL && wave2 != NULL) {
-        gdImagePng(img1, wave10);
+   if(wave12 != NULL && wave6 != NULL && wave2 != NULL) {
+        gdImagePng(img1, wave12);
         gdImagePng(img2, wave6);
         gdImagePng(img3, wave2);
-        fclose(wave10);
+        fclose(wave12);
         fclose(wave6);
         fclose(wave2);
     }
@@ -288,4 +288,5 @@ int main(){
    gdImageDestroy(img1);
    gdImageDestroy(img2);
    gdImageDestroy(img3);
+   close(uart_fd);
 }

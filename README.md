@@ -1,6 +1,6 @@
 # Progetto_SO
 
-## Server.c
+## Server
 
 Questo programma è responsabile della comunicazione con il client, della gestione dei comandi ricevuti e dell'invio dei dati richiesti.E' eseguito su un microcontrollore e comunica con il client tramite la seriale.
 
@@ -10,7 +10,7 @@ Questo programma è responsabile della comunicazione con il client, della gestio
 
 uart.h è diviso in due parti :
 
-1. **Viene configurata la comunicazione UART (Universal Asynchronous Receiver-Transmitter) su un microcontrollore.**
+1.**Viene configurata la comunicazione UART (Universal Asynchronous Receiver-Transmitter) su un microcontrollore.**
 
 ```C
 #define BAUD 19200
@@ -23,7 +23,7 @@ La riga successiva `#define MYUBRR (F_CPU/16/BAUD-1)` definisce un'altra macro d
 
 In sintesi, queste due righe stanno impostando il baud rate per la comunicazione UART su un microcontrollore. Il baud rate effettivo è determinato dalla frequenza di clock del microcontrollore (`F_CPU`) e dal baud rate desiderato (`BAUD`).
 
-1. **Dichiarazioni di funzioni per la comunicazione UART Universal Asynchronous Receiver-Transmitter**
+2.**Dichiarazioni di funzioni per la comunicazione UART Universal Asynchronous Receiver-Transmitter**
 
 ```C
 /* Dichiarazione della funzione per inizializzare l'UART */ 
@@ -42,9 +42,9 @@ char UART_getString(char* buf);
 void UART_putString(char* buf);
 ```
 
- Le funzioni `UART_putChar` e `UART_putString` sono utilizzate per inviare dati via UART.
- Le funzioni `UART_getChar` e `UART_getString` sono utilizzate per ricevere dati.
- La funzione `UART_init` è utilizzata per inizializzare l'UART.
+Le funzioni `UART_putChar` e `UART_putString` sono utilizzate per inviare dati via UART.
+Le funzioni `UART_getChar` e `UART_getString` sono utilizzate per ricevere dati.
+La funzione `UART_init` è utilizzata per inizializzare l'UART.
 
 #### *uart.c*
 
@@ -178,11 +178,8 @@ Il funzionamento di un ADC può essere spiegato in tre passaggi principali:
 I registri utilizzati saranno:
 
 1. **ADMUX**: Questo registro viene utilizzato per le impostazioni di riferimento e di allineamento dell'ADC.
-
-Dalla documentazione del microcontrollore, possiamo vedere che ADMUX ha i seguenti bit:
-
+Dalla documentazione del microcontrollore, possiamo vedere che ADMUX ha i seguenti bit
 ADMUX Register Description:
-
 Bit 7 – REFS1:0: Aref Select
 REFS1:0 is the AREF select bit. This bit selects the voltage reference for the analog-to-digital converter (ADC).
 
@@ -193,7 +190,6 @@ REFS1:0 is the AREF select bit. This bit selects the voltage reference for the a
 
 Bit 6 – ADLAR: Right Adjust Data
 When this bit is set, the ADC result is right justified.
-
 Bit 5 – MUX3:0: ADC Multiplexer Selection
 These bits select the input channel. When MUX3 is cleared, the MSB of the 4-channel multiplexer is cleared.
 
@@ -214,24 +210,18 @@ These bits select the input channel. When MUX3 is cleared, the MSB of the 4-chan
 * 1110 = ADC6
 * 1111 = ADC7
 
-1. **ADCSRA**: Questo registro viene utilizzato per impostare il prescaler e abilitare l'ADC.
-
+2.**ADCSRA**: Questo registro viene utilizzato per impostare il prescaler e abilitare l'ADC.
 Dalla documentazione del microcontrollore, possiamo vedere che ADCSRA ha i seguenti bit:
 
 ADCSRA Register Description:
-
 Bit 7 – ADIF: ADC Interrupt Flag
 This bit is set when the analog-to-digital conversion completes.
-
 Bit 6 – ADIE: ADC Interrupt Enable
 When this bit is set, the ADC generates an interrupt request when the conversion completes.
-
 Bit 5 – ADSC: ADC Start Conversion
 When this bit is set, the ADC starts the conversion.
-
 Bit 4 – ADEN: ADC Enable
 When this bit is set, the ADC is enabled.
-
 Bit 3 – ADPS2:0: ADC Prescaler Select
 These bits select the ADC clock prescaler. The prescaler can range from 2 to 128.
 
@@ -357,7 +347,6 @@ Infine la funzione compone la stringa da inviare al client con i valori dei tre 
 Il timer 5 è un timer a 16 bit utilizzato per generare un interrupt a intervalli regolari decisi dal client che invia un tempo di campionamento in millisecodi.  
 
 ```C
-
 ISR(TIMER5_COMPA_vect){
     interrupt_occurred = 1;
     interrupt_counter++;
@@ -432,7 +421,7 @@ char user_input[256];
 
 `sampling_time = atof(user_input)`: Questa riga di codice converte la stringa `user_input` in un valore float utilizzando la funzione `atof()`. Questo valore rappresenta il tempo di campionamento in millisecondi inviato dal client e verrà usato per tutti i calcoli algebrici che regolano il programma.
 
-## Client.c
+## Client
 
 Questo programma è responsabile della comunicazione con il server, dell'invio dei comandi e della ricezione dei dati. E' eseguito su un computer e comunica con il server tramite la seriale.
 

@@ -83,7 +83,7 @@ void oscilloscope(void){
 
     /* 
      * Take sub-samples and average them 
-     * for fixing the sample and hold issue 
+     * for the rumore reduction
     */
     for(int k = 0; k < 200; k++){
        /* Start ADC conversion */
@@ -100,8 +100,6 @@ void oscilloscope(void){
 
     /* Reset ADMUX */
     ADMUX = 0;
-
-
   }
    
    dtostrf(interrupt_counter * sampling_time/1000, 4, 4, adc_value_str);

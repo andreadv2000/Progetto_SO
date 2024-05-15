@@ -1,5 +1,9 @@
 # Progetto_SO
 
+**Setting Arduino-Mega**
+
+![Example Image](./project_schema.png)
+
 ## Server
 
 Questo programma è responsabile della comunicazione con il client, della gestione dei comandi ricevuti e dell'invio dei dati richiesti.E' eseguito su un microcontrollore e comunica con il client tramite la seriale.

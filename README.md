@@ -381,13 +381,13 @@ void main(){
 `uint16_t ocr = (uint16_t)(15.625 * timer)`: Questa riga di codice calcola il valore da impostare in OCR5A per generare un interrupt a intervalli regolari. Il valore 15.625 è stato calcolato per generare un interrupt ogni 1 millisecondo con un prescaler di 1024.
 
  Il cloak è 16 MHz:
- 2. Converto l'intervallo desiderato in secondi: 1 ms = 0,001 s
+ 1. Converto l'intervallo desiderato in secondi: 1 ms = 0,001 s
  2. Calcola il numero di cicli di clock in questo intervallo: 0,001 s * 16.000.000 Hz = 16.000 cicli
- 2. Il registro OCR5A è a 16 bit, quindi può contenere valori fino a 65.535.
+ 3. Il registro OCR5A è a 16 bit, quindi può contenere valori fino a 65.535.
     Il timer è in modalità CTC (Cancella timer durante la corrispondenza comparativa),
     il timer verrà reimpostato su 0 ogni volta che raggiunge il valore in OCR5A.
     Pertanto, per ottenere un intervallo del timer di 16.000 cicli, impostare OCR5A su 16.000.
- 2. Per gestire i prescaler, sarà necessario regolare il valore di conseguenza.
+ 4. Per gestire i prescaler, sarà necessario regolare il valore di conseguenza.
     Ad esempio, se stai  utilizzando un prescaler di 1024,
     calcoleresti il valore OCR5A in questo modo: 16.000 / 1024 ≈ 15.625.
 

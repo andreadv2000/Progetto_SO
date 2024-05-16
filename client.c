@@ -43,24 +43,6 @@ int main(){
         perror("Client: Error getting termios settings");
         return 1;
     }
-    
-   /* The termios structure(man)
-      *      Many of the functions described here have a termios_p argument
-      *     that is a pointer to a termios structure.  This structure
-      *      contains at least the following members:
-
-      *          tcflag_t c_iflag;        input modes 
-      *          tcflag_t c_oflag;        output modes 
-      *          tcflag_t c_cflag;        control modes 
-      *          tcflag_t c_lflag;        local modes 
-      *         cc_t     c_cc[NCCS];      special characters 
-   */
-
-  /* Set up serial port 
-    * options.c_cflag sets the channel configuration flag, which contains the flags that define how the channel is used, 
-    * including the number of bits per character, the number of stop bits, speed, parity, control flow, and data flow. 
-    * In this case, we set options.c_cflag to B19200 | CS8, which means "19200 bits per second, 8 bits per character". 
-  */
    
    /* Set the baud rate */
    settings.c_cflag |= CS8;
@@ -90,8 +72,6 @@ int main(){
        perror("Client: Error writing to serial port");
        return 1;
    }
-   
-   
    
    FILE* data_stream, *channel1, *channel2, *channel3;
    FILE *wave12, *wave6, *wave2;

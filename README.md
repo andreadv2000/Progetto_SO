@@ -47,7 +47,9 @@ void UART_putString(char* buf);
 ```
 
 Le funzioni `UART_putChar` e `UART_putString` sono utilizzate per inviare dati via UART.
+
 Le funzioni `UART_getChar` e `UART_getString` sono utilizzate per ricevere dati.
+
 La funzione `UART_init` è utilizzata per inizializzare l'UART.
 
 #### *uart.c*
@@ -185,6 +187,7 @@ I registri utilizzati saranno:
 Dalla documentazione del microcontrollore, possiamo vedere che ADMUX ha i seguenti bit:
 
 Bit 7 – REFS1:0: Aref Select
+
 REFS1:0 is the AREF select bit. This bit selects the voltage reference for the analog-to-digital converter (ADC).
 
 * 00 = AREF External Reference on PORT A (default)
@@ -193,8 +196,11 @@ REFS1:0 is the AREF select bit. This bit selects the voltage reference for the a
 * 11 = Reserved
 
 Bit 6 – ADLAR: Right Adjust Data
+
 When this bit is set, the ADC result is right justified.
+
 Bit 5 – MUX3:0: ADC Multiplexer Selection
+
 These bits select the input channel. When MUX3 is cleared, the MSB of the 4-channel multiplexer is cleared.
 
 * 0000 = ADC0
@@ -214,19 +220,27 @@ These bits select the input channel. When MUX3 is cleared, the MSB of the 4-chan
 * 1110 = ADC6
 * 1111 = ADC7
 
-2.**ADCSRA**: Questo registro viene utilizzato per impostare il prescaler e abilitare l'ADC.
+2. **ADCSRA**: Questo registro viene utilizzato per impostare il prescaler e abilitare l'ADC.
 Dalla documentazione del microcontrollore, possiamo vedere che ADCSRA ha i seguenti bit:
 
-ADCSRA Register Description:
 Bit 7 – ADIF: ADC Interrupt Flag
+
 This bit is set when the analog-to-digital conversion completes.
+
 Bit 6 – ADIE: ADC Interrupt Enable
+
 When this bit is set, the ADC generates an interrupt request when the conversion completes.
+
 Bit 5 – ADSC: ADC Start Conversion
+
 When this bit is set, the ADC starts the conversion.
+
 Bit 4 – ADEN: ADC Enable
+
 When this bit is set, the ADC is enabled.
+
 Bit 3 – ADPS2:0: ADC Prescaler Select
+
 These bits select the ADC clock prescaler. The prescaler can range from 2 to 128.
 
 * 000 = 2
@@ -234,9 +248,9 @@ These bits select the ADC clock prescaler. The prescaler can range from 2 to 128
 * 010 = 4
 * 011 = 8
 * 100 = 16
-* 101 = 32
+* 101 = 32 <------ we are using this prescaler
 * 110 = 64
-* 111 = 128 <------ we are using this prescaler
+* 111 = 128 
 
 Bits 2 to 0 are not used.
 
@@ -327,7 +341,7 @@ void oscilloscope(void){
 
 ```
 
-`float Volt_converter = 5/1023.0`:Questa variabile viene utilizzata per convertire l'output digitale da un Convertitore Analogico-Digitale (ADC) in un valore di tensione.
+`float Volt_converter = 5/1023.0`: Questa variabile viene utilizzata per convertire l'output digitale da un Convertitore Analogico-Digitale (ADC) in un valore di tensione.
 Il modulo ADC converte una tensione di ingresso analogica in un valore digitale. Questo valore digitale è spesso compreso tra 0 e un valore massimo, che è determinato dalla risoluzione dell'ADC. Per un ADC a 10 bit, il valore massimo è 1023 (2^10 - 1).
 La variabile `Volt_converter` viene calcolata dividendo la tensione di riferimento (5 volt in questo caso) per il valore massimo dell'ADC (1023 per un ADC a 10 bit). Questo fornisce un fattore che può essere utilizzato per convertire l'output digitale dell'ADC nella corrispondente tensione di ingresso.
 Quindi, se si moltiplica il valore digitale letto dall'ADC per `Volt_converter`, otterrai la tensione equivalente che l'ADC ha letto.
@@ -442,22 +456,22 @@ if(uart_fd < 0){
     return -1;
 }
     
-    ret = tcgetattr(uart_fd, &settings);
-    if(ret != 0){
+ret = tcgetattr(uart_fd, &settings);
+  if(ret != 0){
         perror("Client: Error getting termios settings");
         return 1;
-    }
+  }
    
-   /* Set the baud rate */
-   settings.c_cflag |= CS8;
-   cfsetispeed(&settings, B19200);
-   cfsetospeed(&settings, B19200);
+/* Set the baud rate */
+settings.c_cflag |= CS8;
+cfsetispeed(&settings, B19200);
+cfsetospeed(&settings, B19200);
 
-   ret = tcsetattr(uart_fd, TCSANOW, &settings);
-   if(ret != 0){
-       printf("Error settings termios settings %i %s\n", ret, strerror(errno));
-       return 1;
-   }
+ret = tcsetattr(uart_fd, TCSANOW, &settings);
+if(ret != 0){
+    printf("Error settings termios settings %i %s\n", ret, strerror(errno));
+    return 1;
+}
 ```
 
 `struct termios settings`: Questa struttura contiene i parametri di configurazione per il terminale seriale.
